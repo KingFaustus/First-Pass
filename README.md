@@ -1,69 +1,131 @@
 # First Pass - Grading Assistant
 
-First Pass helps teaching assistants grade short-answer questions faster and more consistently. It reads each student response against your rubric and suggests a score for every criterion, a one-line reason for each, and draft feedback. Your TA reviews every suggestion and makes the final call.
+**AI-suggested grades for short-answer questions, with the TA always making the final call.**
 
-It is a prototype, not a finished product. It was built to test whether this kind of tool is useful and trustworthy in a real course.
+First Pass reads each student response against the instructor's rubric and proposes a score for every criterion, a short reason for each score, and draft feedback for the student. The teaching assistant reviews every suggestion, accepts or overrides it, and exports final grades. Instructors get a clear view of how closely human and AI judgments agree and where grading was inconsistent.
 
-**Try it:** [link to the live site]
-The site opens with an example question and eight invented student answers already graded, so you can walk through the full review process without entering anything.
+**Live demo:** [link to the live site]
+The demo opens with a sample Responsible AI exam question and eight invented student answers already graded, so the full review workflow can be explored in under five minutes.
+
+---
+
+## The problem
+
+Short-answer questions are one of the most effective ways to test real understanding. They are also among the most expensive to grade well.
+
+- **Grading takes hours.** A single short-answer question on a 100-student exam can take a TA an entire evening, and most of that time is spent matching answers to a rubric.
+- **Standards drift.** The 5th answer and the 95th answer are rarely held to exactly the same bar, and two TAs splitting a stack calibrate differently.
+- **Feedback suffers.** Written comments get shorter as fatigue sets in, even though feedback is what students value most.
+- **Instructors have little visibility.** Once grading is delegated, it is hard to know whether the rubric was applied consistently until students start contesting grades.
+
+The idea came from direct experience: First Pass was inspired by grading short-answer exams as a TA for a graduate Responsible AI course.
+
+## Who it is for
+
+| | Role | What they need |
+|---|---|---|
+| **Primary user** | Graduate TAs and graders | Less time per answer, consistent standards, good feedback without burnout |
+| **Decision maker** | Course instructors | Fair, defensible grades and oversight of delegated grading |
+| **Likely buyer** | Departments and centers for teaching and learning | Tools that scale teaching support while meeting privacy and AI-use policy |
+
+## How it works
+
+1. **Define the question and rubric.** The instructor or TA enters each rubric criterion with its point value and a description of what earns credit.
+2. **Calibrate (optional).** Adding a few answers the instructor has already graded teaches First Pass that instructor's specific standard.
+3. **Add responses.** Paste answers or import a spreadsheet, using anonymized IDs.
+4. **Review.** Each answer shows a suggested score per criterion, the reasoning behind it, a confidence level, and editable draft feedback. Low-confidence and unusual answers are flagged and shown first. The TA accepts each suggestion or enters their own score.
+5. **Export.** Final grades and feedback download as a CSV, ready for the gradebook.
+
+## Instructor oversight
+
+The **Insights** view turns grading into something an instructor can audit:
+
+- **Agreement rate:** how often final grades matched the AI suggestion exactly, and within one point.
+- **Score distribution:** suggested and final scores side by side.
+- **Performance by criterion:** which rubric elements students found hardest, useful for adjusting instruction.
+- **Consistency check:** pairs of answers that make essentially the same points but received different scores, caught before grades are released.
+
+## Responsible design
+
+First Pass was designed around the principles taught in the course that inspired it.
+
+- **Human in the loop.** The tool never assigns a grade. Every score is accepted or changed by a person, and overrides are recorded.
+- **Explainable suggestions.** Each score is tied to a specific rubric criterion with a stated reason, so graders can see why, not only what.
+- **Honest about uncertainty.** Ambiguous or off-rubric answers are flagged for closer review instead of scored silently.
+- **Rubric-bound.** The model is instructed to reward what the rubric describes, not length, polish, or confident tone.
+- **Minimal data handling.** Student responses are not stored on the server. They stay in the grader's browser until exported, and anonymized IDs are used throughout.
+
+## How it differs from existing tools
+
+Established platforms such as Gradescope already use AI to [group similar answers](https://guides.gradescope.com/hc/en-us/articles/24838908062093-AI-assisted-grading-and-answer-groups) so a grader can score a whole group at once. First Pass takes a different approach:
+
+- It scores **each answer against each rubric criterion** and explains the score, rather than only clustering answers.
+- It **drafts individualized feedback** for every student.
+- It **learns an instructor's standard** from a handful of previously graded examples.
+- It **measures human-AI agreement** and **flags inconsistent grading**, giving instructors evidence that the rubric was applied fairly.
+
+## Current status
+
+First Pass is a working prototype. The full grading, review, insights, and export workflow is functional, and live grading runs on Anthropic's Claude models.
+
+**Known limitations**
+- Built for short text responses; essays, code, math, and handwritten work are out of scope for now.
+- Grading quality depends on rubric clarity. Vague criteria produce vague scoring.
+- No accounts, saved sessions, or LMS integration yet; grades move through CSV export.
+- Accuracy has not yet been validated against human graders at scale.
 
 ---
 
-## The problem it addresses
+## Roadmap to a viable product
 
-Short-answer questions are some of the best ways to assess understanding, and some of the hardest to grade well at scale.
+The central question is not whether AI can suggest grades, but whether instructors will **trust** the suggestions and whether institutions will **approve and pay** for them. The plan below tests those assumptions in order, cheapest first.
 
-- **Time.** A TA grading 100 responses spends hours on work that is largely matching answers to a rubric.
-- **Drift.** The 5th and the 95th answer rarely get graded to exactly the same standard, and co-TAs calibrate differently.
-- **Feedback quality.** Written feedback tends to get shorter as fatigue sets in, even though students value it most.
+### Phase 1: Validate the need and the accuracy (next 4-6 weeks)
 
-First Pass takes the first pass at each answer, so TAs spend their time judging edge cases instead of re-reading the rubric.
+- **Customer discovery.** Interview 15-20 people across the value chain: TAs, instructors, a center for teaching and learning, and an academic technology or privacy office. Focus on how grading works today, where time is lost, what would make an AI suggestion trustworthy, and who approves new tools.
+- **Accuracy benchmark.** Run First Pass on 2-3 past assignments that were already graded by humans, with permission and anonymized data. Measure exact agreement, agreement within one point, and where the tool and graders disagree.
+- **Time study.** Time TAs grading a batch with and without First Pass.
 
-## How it works in a course
+**Go / no-go signals:** suggestions within one point of the human grade for a large majority of answers; a meaningful reduction in grading time; at least a few instructors willing to pilot.
 
-1. **Set up the question.** Enter the question and your rubric, with a point value and a short description of what earns credit for each criterion.
-2. **Add calibration examples (optional).** Paste a few answers you or your TA have already graded. First Pass uses them to match your standard rather than a generic one.
-3. **Add student responses.** Paste them in or import a spreadsheet. Use anonymized IDs rather than names.
-4. **Review.** Each answer shows the suggested score per criterion, the reasoning behind it, and draft feedback. The TA accepts the suggestion or enters a different score, and can edit the feedback. Answers the tool is unsure about, or that fall outside the rubric, are flagged and shown first.
-5. **Export.** Download final grades and feedback as a CSV for your gradebook or LMS.
+### Phase 2: Classroom pilot (Spring 2027)
 
-## What the instructor can see
+- Pilot in 2-3 courses at Johns Hopkins with a short-answer component, starting at Carey.
+- Complete a privacy and AI-use review with the university before any live student work is graded.
+- Track agreement rates, time saved, override patterns, grade disputes, and TA and instructor satisfaction.
+- Collect student-facing feedback quality ratings from a sample of students.
 
-The **Insights** view is designed for oversight:
+### Phase 3: Build the product (Summer-Fall 2027)
 
-- **Agreement rate:** how often the TA's final grade matched the suggestion exactly, and how often it was within one point.
-- **Score distribution:** suggested scores and final grades side by side.
-- **Average by criterion:** which parts of the rubric students struggled with most.
-- **Consistency check:** pairs of answers that make essentially the same points but received different scores, so they can be reconciled before grades are released.
+Based on pilot results, prioritize:
 
-## Safeguards
+- **Accounts and saved workspaces**, so grading can pause and resume and rubrics can be reused across terms.
+- **LMS integration** with Canvas and Blackboard to import submissions and return grades without spreadsheets.
+- **Multi-grader support**, so co-TAs share one calibrated standard and instructors see agreement across graders.
+- **Audit log and reporting** for grade disputes and institutional review.
+- **Enterprise requirements**: single sign-on, data processing agreements, and FERPA-aligned data handling.
 
-- **The TA grades; the tool suggests.** No grade is final until a person accepts or changes it, and every override is recorded.
-- **Transparent reasoning.** Every suggested score comes with a reason tied to a specific rubric criterion, so a TA can see why, not just what.
-- **Uncertainty is surfaced.** Low-confidence answers and answers that don't fit the rubric are flagged for closer review rather than scored silently.
-- **Rubric-bound grading.** The tool is instructed to reward what the rubric describes, not length or confident tone.
-- **No stored student data.** Responses stay in the grader's browser session until exported. Nothing is saved on the server.
+### Phase 4: Business model and go-to-market
 
-## Before using it with real student work
+- **Pricing hypotheses to test:** a per-course license paid by departments, or an institution-wide license sold through centers for teaching and learning.
+- **Beachhead market:** graduate professional schools, starting with business schools, where short-answer and case-based assessment is common and class sizes are growing.
+- **Champions:** TAs feel the pain, instructors approve adoption, and teaching centers can recommend tools across a university.
+- **Unit economics:** model per-answer AI costs against pricing to confirm healthy margins at scale.
 
-- Student responses are sent to Anthropic's Claude API to generate suggestions. Please confirm this fits your institution's AI policy and FERPA guidance before using identifiable or live student work.
-- Remove names and student ID numbers before grading.
-- Start with a past assignment your TA has already graded. Comparing the agreement rate on that set is the simplest way to judge whether the suggestions meet your standard.
+### Key risks and how we will address them
 
-## Current limitations
-
-- Designed for short-answer text responses, not essays, code, math work, or images.
-- Suggestions are only as clear as the rubric. Vague criteria produce vague scoring.
-- There is no LMS integration yet. Grades move in and out through CSV.
-- Work is not saved between sessions. Export before closing the page.
-- Accuracy has not yet been validated across multiple courses. Pilot data is the next step.
-
-## Feedback and pilots
-
-First Pass was developed by Absalom, a Full-Time MBA candidate at the Johns Hopkins Carey Business School, as part of a New Product Development course project.
-
-If you teach a course with short-answer assessments and would be willing to try First Pass on a past assignment, or simply share how grading works in your course today, that input would directly shape the next version.
+| Risk | Mitigation |
+|---|---|
+| Instructors don't trust AI-suggested grades | Human-in-the-loop design, explained scores, and published agreement data from pilots |
+| University privacy or AI-use policy blocks adoption | Engage privacy offices early; anonymization by default; no server-side storage of student work |
+| Incumbent platforms add similar features | Differentiate on rubric-level explanations, calibration, and grading-consistency analytics; move quickly within a focused market |
+| Accuracy varies by subject or question type | Stay focused on short-answer text; benchmark by discipline before expanding |
+| Students contest AI-assisted grades | Every final grade is set by a person, with a rubric-linked reason and audit trail |
 
 ---
+
+## About
+
+First Pass was developed by Absalom, a Full-Time MBA candidate at the Johns Hopkins Carey Business School, as part of the New Product Development course (BU.460.730).
 
 *Technical setup and deployment instructions are in [DEPLOY.md](DEPLOY.md).*
