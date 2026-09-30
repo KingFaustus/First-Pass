@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>First Pass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a gradebook workbench — sticky tab bar, one working column, review cards read like marked scripts in the margin */
+:root{
+  --bg:#F3F5F6; --surface:#FFFFFF; --sunk:#E8ECEE; --line:#D3DADE;
+  --ink:#18222B; --muted:#5A6873; --accent:#1E5A7A; --accent-soft:#DCEAF2;
+  --mark:#B4352B; --mark-soft:#F7E1DE; --ok:#2F7A4E; --ok-soft:#DDF0E4; --warn:#9A6B0E; --warn-soft:#F6EBCF;
+  --display:"Spectral",Georgia,serif; --body:"Public Sans",system-ui,-apple-system,Segoe UI,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12181D; --surface:#1A2229; --sunk:#222C34; --line:#33414B;
+  --ink:#E6ECF0; --muted:#98A7B2; --accent:#7DB8D8; --accent-soft:#1F3444;
+  --mark:#EE8A7F; --mark-soft:#3D2522; --ok:#7CCB9A; --ok-soft:#1D3327; --warn:#E3B55A; --warn-soft:#3A2F17; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181D; --surface:#1A2229; --sunk:#222C34; --line:#33414B;
+  --ink:#E6ECF0; --muted:#98A7B2; --accent:#7DB8D8; --accent-soft:#1F3444;
+  --mark:#EE8A7F; --mark-soft:#3D2522; --ok:#7CCB9A; --ok-soft:#1D3327; --warn:#E3B55A; --warn-soft:#3A2F17; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:0 64px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{max-width:980px;margin:0 auto;padding:12px 16px 0;display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 20px}
+.brand{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:-.01em;padding-bottom:10px;margin-right:auto}
+.brand small{font-family:var(--body);font-weight:500;font-size:12px;color:var(--muted);margin-left:8px;letter-spacing:.02em}
+nav.tabs{display:flex;gap:4px}
+nav.tabs button{font:600 14px var(--body);background:none;border:0;color:var(--muted);padding:8px 12px 10px;border-bottom:2px solid transparent;cursor:pointer}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs .count{font:600 11px var(--mono);background:var(--sunk);border-radius:9px;padding:1px 6px;margin-left:6px}
+h2{font-family:var(--display);font-weight:600;font-size:24px;margin:28px 0 4px;text-wrap:balance}
+h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:24px 0 8px;font-weight:600}
+p.lede{color:var(--muted);margin:0 0 16px;max-width:65ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+label.f{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+textarea,input[type=text],input[type=number]{width:100%;font:14px/1.5 var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 10px}
+textarea:focus,input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:600 14px var(--body);border-radius:4px;padding:8px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.rubric{display:grid;gap:8px}
+.crit{display:grid;grid-template-columns:minmax(0,1.2fr) 70px minmax(0,2fr) 32px;gap:8px;align-items:start}
+@media (max-width:640px){.crit{grid-template-columns:minmax(0,1fr) 64px 32px}.crit .cdesc{grid-column:1/-1;order:5}}
+.crit .x{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:6px}
+.hint{font-size:13px;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.statusline{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding:12px 14px;border-radius:6px;background:var(--accent-soft)}
+.statusline[hidden]{display:none}
+.banner{padding:10px 14px;border-radius:6px;background:var(--warn-soft);color:var(--ink);font-size:14px;margin:16px 0 0}
+/* review */
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0}
+.chipbtn{font:600 13px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:14px;padding:4px 12px;cursor:pointer}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cards{display:grid;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;display:grid;grid-template-columns:minmax(0,1fr) 200px}
+@media (max-width:760px){.card{grid-template-columns:1fr}}
+.card.flagged{border-left:3px solid var(--warn)}
+.card .main{padding:14px 16px;min-width:0}
+.card .side{padding:14px 16px;border-left:1px dashed var(--line);display:flex;flex-direction:column;gap:10px}
+@media (max-width:760px){.card .side{border-left:0;border-top:1px dashed var(--line)}}
+.chead{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-bottom:8px}
+.sid{font:600 13px var(--mono)}
+.pill{font:600 11px var(--body);letter-spacing:.04em;text-transform:uppercase;border-radius:3px;padding:2px 7px}
+.pill.high{background:var(--ok-soft);color:var(--ok)}
+.pill.medium{background:var(--accent-soft);color:var(--accent)}
+.pill.low,.pill.flag{background:var(--warn-soft);color:var(--warn)}
+.pill.done{background:var(--ok-soft);color:var(--ok)}
+.pill.over{background:var(--mark-soft);color:var(--mark)}
+.pill.pend{background:var(--sunk);color:var(--muted)}
+blockquote.ans{margin:0 0 12px;padding:10px 12px;background:var(--sunk);border-radius:4px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+table.crits{width:100%;border-collapse:collapse;font-size:13.5px}
+table.crits td{padding:6px 4px;border-top:1px solid var(--line);vertical-align:top}
+table.crits td.s{width:56px;text-align:right;font-family:var(--mono);font-weight:600;white-space:nowrap}
+table.crits td.n{width:34%;font-weight:600}
+table.crits td.r{color:var(--muted)}
+.fb label{margin-top:12px}
+.fb textarea{min-height:64px;font-size:14px}
+.score{font-family:var(--display);font-size:40px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.score .of{font-size:18px;color:var(--muted)}
+.score.marked{color:var(--mark)}
+.suggest{font-size:12px;color:var(--muted)}
+.override{display:flex;gap:6px;align-items:center}
+.override input{width:72px}
+.empty{padding:32px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:6px}
+/* insights */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.kpi b{display:block;font-family:var(--display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.hist{display:flex;align-items:flex-end;gap:10px;height:150px;padding:12px 4px 0;border-bottom:1px solid var(--line)}
+.hcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.hbars{display:flex;gap:3px;align-items:flex-end;width:100%;justify-content:center;flex:1}
+.hbar{width:40%;max-width:26px;border-radius:2px 2px 0 0;min-height:2px}
+.hbar.ai{background:var(--accent)}
+.hbar.fin{background:var(--mark)}
+.hval{font:11px var(--mono);color:var(--muted)}
+.hlab{display:flex;gap:10px;padding:4px 4px 0}
+.hlab span{flex:1;text-align:center;font:12px var(--mono);color:var(--muted)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.cbars{display:grid;gap:10px}
+.cb{display:grid;grid-template-columns:minmax(0,1fr) 2fr 56px;gap:10px;align-items:center;font-size:13.5px}
+.track{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}
+.track div{height:100%;background:var(--accent)}
+.pairs{display:grid;gap:10px}
+.pair{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--mark);border-radius:6px;padding:12px 14px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <div class="brand">First Pass <small>Grading Assistant</small></div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-setup" aria-selected="true" data-tab="setup">Setup</button>
+      <button role="tab" id="tab-review" aria-selected="false" data-tab="review">Review<span class="count" id="count-review">0</span></button>
+      <button role="tab" id="tab-insights" aria-selected="false" data-tab="insights">Insights</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- SETUP -->
+  <section id="view-setup">
+    <h2>Set up the assignment</h2>
+    <p class="lede">Enter the question, the rubric, and a batch of anonymized answers. Claude suggests a score per rubric criterion with reasons and draft feedback. The TA accepts or overrides every grade.</p>
+    <div id="exampleNote" class="banner">Loaded with an example Responsible AI question and eight invented student answers, already graded, so you can try the review flow. Replace them with your own material to grade live.</div>
+
+    <h3>Question</h3>
+    <textarea id="question" rows="3"></textarea>
+
+    <h3>Rubric</h3>
+    <div class="panel">
+      <div class="rubric" id="rubric"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" id="addCrit">Add criterion</button>
+        <span class="hint">Total: <b class="mono" id="rubricTotal">0</b> points</span>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h3>Student answers</h3>
+        <textarea id="answers" rows="12" placeholder="S-101: answer text&#10;---&#10;S-102: answer text"></textarea>
+        <div class="row" style="margin-top:8px">
+          <label class="btn small" for="csvFile" style="display:inline-block">Import CSV</label>
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+          <span class="hint">Separate answers with <span class="mono">---</span>. Start each with an ID and a colon. CSV needs <span class="mono">id</span> and <span class="mono">answer</span> columns.</span>
+        </div>
+      </div>
+      <div>
+        <h3>Calibration examples <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></h3>
+        <textarea id="anchors" rows="12" placeholder="Score: 5&#10;An answer you graded yourself…&#10;---&#10;Score: 2&#10;Another one…"></textarea>
+        <p class="hint" style="margin:8px 0 0">A few answers you already graded. Claude uses them to match your standard.</p>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:20px">
+      <button class="btn primary" id="gradeBtn">Grade answers with Claude</button>
+      <label class="hint row" style="gap:6px"><input type="checkbox" id="onlyNew"> Only answers without a suggestion</label>
+    </div>
+    <div class="row" id="codeRow" hidden style="margin-top:12px"><label class="f" for="accessCode" style="margin:0">Access code</label><input type="text" id="accessCode" autocomplete="off" style="max-width:220px"></div>
+    <p class="hint" id="liveNote" style="margin-top:8px">Use anonymized answers only. Student text is sent to the Claude API for grading.</p>
+    <div class="statusline" id="status" hidden>
+      <span id="statusText">Thinking…</span>
+      <button class="btn small" id="stopBtn">Stop</button>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="view-review" hidden>
+    <h2>Review suggested grades</h2>
+    <p class="lede">Low-confidence and flagged answers are listed first. Accept a suggestion, or enter your own score to override it. Edit the feedback before exporting.</p>
+    <div class="row">
+      <div class="filters" id="filters" style="margin:0"></div>
+      <span style="margin-left:auto" class="row">
+        <button class="btn small" id="acceptHigh">Accept all high-confidence</button>
+        <button class="btn small" id="exportBtn">Export CSV</button>
+      </span>
+    </div>
+    <p class="hint" id="exportNote" style="margin:8px 0 0"></p>
+    <div class="cards" id="cards" style="margin-top:16px"></div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section id="view-insights" hidden>
+    <h2>Grading insights</h2>
+    <p class="lede">How closely your final grades match Claude's suggestions. This agreement rate is the evidence a department would ask for before a pilot.</p>
+    <div class="kpis" id="kpis"></div>
+    <h3>Score distribution</h3>
+    <div class="panel">
+      <div class="hist" id="hist"></div>
+      <div class="hlab" id="hlab"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Claude suggestion</span><span><i style="background:var(--mark)"></i>Final grade</span></div>
+    </div>
+    <h3>Average by criterion</h3>
+    <div class="panel"><div class="cbars" id="cbars"></div></div>
+    <h3>Consistency check</h3>
+    <div class="row">
+      <button class="btn" id="consBtn">Find similar answers with different scores</button>
+      <span class="hint" id="consNote"></span>
+    </div>
+    <div class="pairs" id="pairs" style="margin-top:12px"></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- example data (invented) ---------- */
+const EX_Q = "A hospital deploys an AI model to decide which patients get enrolled in a follow-up care program. An audit finds it enrolls far fewer patients from lower-income zip codes than their health needs would justify. Identify one likely source of this bias and propose one mitigation.";
+const EX_RUBRIC = [
+  {name:"Bias source", points:2, desc:"Names a plausible source (e.g., using past healthcare spending as a proxy for need, unrepresentative training data, missing features)."},
+  {name:"Mechanism", points:1, desc:"Explains how that source leads to under-enrollment of lower-income patients."},
+  {name:"Mitigation", points:1, desc:"Proposes a concrete mitigation."},
+  {name:"Fit and feasibility", points:1, desc:"Mitigation addresses the identified source and could realistically be implemented."}
+];
+const EX_ANSWERS = [
+  ["S-101","The model was probably trained to predict future healthcare costs as a stand-in for how sick people are. Lower-income patients spend less on care because of access barriers, so at the same level of illness they look 'cheaper' and get a lower risk score. The fix is to retrain it on a direct health measure, like number of active chronic conditions or lab values, instead of cost, and audit enrollment rates by income group every quarter."],
+  ["S-102","The training data had fewer low-income patients, so the model didn't learn their patterns well. They should collect more data."],
+  ["S-103","AI is biased because the people who build it are biased. Hospitals should not use AI for decisions about people's health, a doctor should decide."],
+  ["S-104","Using cost as the target label is the problem: poorer patients historically get less care so their costs are lower even when they are equally sick. To fix it, change the label to a health-based outcome such as avoidable hospitalizations."],
+  ["S-105","One source could be that zip code is used as a feature, which acts as a proxy for income and race. The model learns that those zip codes have lower predicted need. They could remove zip code and related proxy features and then check fairness metrics like equal opportunity across income groups before redeploying."],
+  ["S-106","Bias in the data. Mitigation: fairness."],
+  ["S-107","Lower-income patients may have fewer recorded diagnoses because they see doctors less often, so their records look healthier than they are. The model reads missing data as good health. The hospital could add a reweighting step, but honestly I think the bigger issue is that the program has limited slots."],
+  ["S-108","The algorithm is optimized for profit, since the hospital wants to enroll patients who will generate revenue. Replace the objective with a health-need objective and have an ethics board review the model's thresholds each year."]
+];
+const EX_RESULTS = {
+ "S-101":{c:[2,1,1,1],t:5,conf:"high",flags:[],r:["Identifies cost-as-proxy for need.","Links access barriers to lower spending at equal illness.","Retrain on direct health measures plus audits.","Directly targets the proxy problem; realistic."],fb:"Excellent answer. You identified the cost-proxy problem, explained why it disadvantages lower-income patients, and proposed a fix that targets that exact cause."},
+ "S-102":{c:[1,0,1,0],t:2,conf:"medium",flags:["very short"],r:["Underrepresentation is plausible but stated generally.","Does not explain why fewer examples leads to under-enrollment.","'Collect more data' is a mitigation, though vague.","Not specific enough to judge feasibility."],fb:"Underrepresentation is a reasonable source, but explain how it leads to fewer enrollments, and make the mitigation concrete: what data, collected how, and checked how?"},
+ "S-103":{c:[0,0,0,0],t:0,conf:"medium",flags:["outside rubric"],r:["Developer bias is asserted without a technical source.","No mechanism.","Banning AI is a position, not a mitigation of this model's bias.","n/a"],fb:"This expresses a view rather than analyzing the case. Name a specific source of bias in this model, such as its target label or its features, and a change that would reduce it."},
+ "S-104":{c:[2,1,1,1],t:5,conf:"high",flags:[],r:["Cost as label identified.","Clear causal chain from less care to lower cost.","Change label to health outcome.","Addresses the source directly."],fb:"Strong and concise. You tied the label choice to the unequal outcome and fixed the label itself. Adding an ongoing audit would make the answer complete."},
+ "S-105":{c:[2,1,1,1],t:5,conf:"medium",flags:["ambiguous"],r:["Zip code as proxy is plausible.","Explains proxy learning.","Remove proxies and check fairness metrics.","Feasible, though removing zip may not remove all proxies."],fb:"Good reasoning about proxy features, and testing fairness metrics before redeploying is a solid step. Consider that other features can still carry the same information after zip code is removed."},
+ "S-106":{c:[0,0,0,0],t:0,conf:"high",flags:["very short"],r:["Too general to count as a source.","No mechanism.","'Fairness' is not an action.","n/a"],fb:"This is too brief to earn credit. Name a specific source of bias, explain how it causes under-enrollment, and propose a concrete fix."},
+ "S-107":{c:[2,1,1,0],t:4,conf:"low",flags:["outside rubric"],r:["Missing or sparse records is a plausible source.","Explains missingness read as health.","Reweighting is a mitigation.","Reweighting doesn't address missing diagnoses; answer shifts to capacity."],fb:"Sharp insight about missing records looking like good health. Your mitigation should target that directly, for example flagging sparse records or adding utilization-adjusted features."},
+ "S-108":{c:[1,1,1,1],t:4,conf:"low",flags:["ambiguous"],r:["Profit objective is close to the cost-proxy idea but framed as intent.","Explains objective driving selection.","Replace objective with health need.","Fits the source; board review is feasible."],fb:"You are close to the key issue: the objective the model optimizes. Frame it as a proxy-label problem rather than intent to profit, and explain why lower-income patients score lower under it."}
+};
+
+/* ---------- state ---------- */
+const S = { rubric:[], answers:[], results:{}, review:{}, isExample:true, filter:"all", pairs:null };
+
+function loadExample(){
+  $("#question").value = EX_Q;
+  S.rubric = EX_RUBRIC.map(c=>({...c}));
+  $("#answers").value = EX_ANSWERS.map(([id,t])=>id+": "+t).join("\n---\n");
+  $("#anchors").value = "";
+  EX_ANSWERS.forEach(([id])=>{
+    const e = EX_RESULTS[id];
+    S.results[id] = {criteria:S.rubric.map((c,i)=>({name:c.name, score:e.c[i], points:c.points, reason:e.r[i]})), total:e.t, confidence:e.conf, flags:e.flags, feedback:e.fb};
+    S.review[id] = {status:"pending", finalScore:null, feedback:e.fb};
+  });
+  // a few pre-reviewed to show the flow
+  S.review["S-101"].status="accepted"; S.review["S-101"].finalScore=5;
+  S.review["S-106"].status="accepted"; S.review["S-106"].finalScore=0;
+  S.review["S-108"].status="overridden"; S.review["S-108"].finalScore=3;
+}
+
+/* ---------- parsing ---------- */
+function parseAnswers(){
+  const raw = $("#answers").value.trim(); if(!raw) return [];
+  return raw.split(/\n\s*---\s*\n/).map((blk,i)=>{
+    blk = blk.trim(); const m = blk.match(/^([A-Za-z0-9_.\-]{1,24})\s*:\s*([\s\S]*)$/);
+    return m ? {id:m[1], text:m[2].trim()} : {id:"A-"+String(i+1).padStart(3,"0"), text:blk};
+  }).filter(a=>a.text);
+}
+function parseAnchors(){
+  const raw = $("#anchors").value.trim(); if(!raw) return [];
+  return raw.split(/\n\s*---\s*\n/).map(b=>{
+    const m = b.trim().match(/^score\s*:\s*([\d.]+)\s*\n?([\s\S]*)$/i);
+    return m ? {score:Number(m[1]), text:m[2].trim()} : null;
+  }).filter(Boolean);
+}
+function parseCSV(t){
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){ if(c=='"'){ if(t[i+1]=='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c=='"') q=true; else if(c==','){row.push(f);f="";}
+    else if(c=='\n'||c=='\r'){ if(c=='\r'&&t[i+1]=='\n') i++; row.push(f); rows.push(row); row=[]; f=""; }
+    else f+=c; }
+  if(f||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()));
+}
+$("#csvFile").addEventListener("change", async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const rows = parseCSV(await file.text()); if(!rows.length) return;
+  const h = rows[0].map(x=>x.trim().toLowerCase());
+  let ia = h.findIndex(x=>/answer|response|text/.test(x)), ii = h.findIndex(x=>/^(id|student|student_id|anon)/.test(x));
+  const body = ia>=0 ? rows.slice(1) : rows; if(ia<0){ ia = rows[0].length-1; ii = rows[0].length>1?0:-1; }
+  $("#answers").value = body.map((r,k)=>(ii>=0&&r[ii]?r[ii].trim():"A-"+String(k+1).padStart(3,"0"))+": "+(r[ia]||"").trim()).join("\n---\n");
+  e.target.value="";
+});
+
+/* ---------- rubric editor ---------- */
+function renderRubric(){
+  const el = $("#rubric");
+  el.innerHTML = S.rubric.map((c,i)=>`<div class="crit">
+    <input type="text" id="cn${i}" aria-label="Criterion name" value="${esc(c.name)}" data-i="${i}" data-k="name">
+    <input type="number" id="cp${i}" aria-label="Points" min="0" step="0.5" value="${c.points}" data-i="${i}" data-k="points">
+    <textarea class="cdesc" id="cd${i}" aria-label="What earns credit" rows="2" data-i="${i}" data-k="desc">${esc(c.desc)}</textarea>
+    <button class="x" aria-label="Remove criterion" data-rm="${i}">×</button></div>`).join("");
+  $("#rubricTotal").textContent = total();
+}
+const total = () => S.rubric.reduce((a,c)=>a+(Number(c.points)||0),0);
+$("#rubric").addEventListener("input", e=>{const i=e.target.dataset.i,k=e.target.dataset.k; if(i==null)return;
+  S.rubric[i][k] = k==="points"? Number(e.target.value)||0 : e.target.value; $("#rubricTotal").textContent=total();});
+$("#rubric").addEventListener("click", e=>{const i=e.target.dataset.rm; if(i==null)return; S.rubric.splice(i,1); renderRubric();});
+$("#addCrit").onclick=()=>{S.rubric.push({name:"",points:1,desc:""}); renderRubric(); $("#cn"+(S.rubric.length-1)).focus();};
+
+/* ---------- tabs ---------- */
+function show(tab){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===tab));
+  ["setup","review","insights"].forEach(t=>$("#view-"+t).hidden = t!==tab);
+  if(tab==="review") renderReview(); if(tab==="insights") renderInsights();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dataset.tab));
+
+/* ---------- Claude ---------- */
+let live = false, ctl = null;
+const ERR = {unauthorized:"That access code isn't right.", not_configured:"Live grading isn't set up on this site yet.", rate_limited:"The API is rate-limited right now. Wait a minute and try again.", prompt_too_large:"That batch is too long. Grade fewer answers at a time.", invalid_json:"Claude's reply couldn't be read. Try again.", upstream_error:"The Claude API returned an error. Try again."};
+async function callClaude(prompt, signal){
+  let res;
+  try{
+    res = await fetch("/api/grade", {method:"POST", headers:{"Content-Type":"application/json"}, signal,
+      body: JSON.stringify({prompt, code: $("#accessCode").value.trim()})});
+  }catch(e){ if(e.name==="AbortError") throw {code:"cancelled"}; throw {code:"upstream_error"}; }
+  const body = await res.json().catch(()=>({}));
+  if(!res.ok) throw {code: body.code || "upstream_error"};
+  const t = String(body.text||"");
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const cand = fence ? fence[1] : t;
+  try{ return JSON.parse(cand); }catch{}
+  const i = cand.search(/[\[{]/), j = Math.max(cand.lastIndexOf("]"), cand.lastIndexOf("}"));
+  try{ if(i>=0&&j>i) return JSON.parse(cand.slice(i,j+1)); }catch{}
+  throw {code:"invalid_json"};
+}
+const errText = e => ERR[e?.code] || "Something went wrong. Try again.";
+
+function rubricText(){ return S.rubric.map((c,i)=>`${i+1}. ${c.name} (0-${c.points} pts): ${c.desc}`).join("\n"); }
+
+function gradePrompt(batch, anchors){
+  return `You are assisting a university teaching assistant who is grading short-answer exam responses. Grade strictly against the rubric. Do not reward length or confident tone; reward what the rubric describes. Partial credit in steps of 0.5 is allowed.
+
+QUESTION:
+${$("#question").value.trim()}
+
+RUBRIC (total ${total()} pts):
+${rubricText()}
+${anchors.length? "\nCALIBRATION EXAMPLES graded by the TA (match this standard):\n"+anchors.map(a=>`[TA score ${a.score}/${total()}] ${a.text}`).join("\n\n"):""}
+
+ANSWERS TO GRADE:
+${batch.map(a=>`<answer id="${a.id}">\n${a.text}\n</answer>`).join("\n")}
+
+Reply with only a JSON array, one object per answer, in this shape:
+[{"id":"S-101","criteria":[{"name":"<rubric criterion name>","score":2,"reason":"<one short sentence>"}],"feedback":"<2-3 sentences to the student: what worked, what to improve>","confidence":"high|medium|low","flags":["very short"|"off-topic"|"ambiguous"|"outside rubric"]}]
+Include every rubric criterion in order for every answer. Use "low" confidence when a reasonable TA might score it differently. Flags may be an empty array.`;
+}
+
+function clampResult(r){
+  const crit = S.rubric.map((c,i)=>{
+    const m = (r.criteria||[]).find(x=>String(x.name).trim().toLowerCase()===c.name.trim().toLowerCase()) || (r.criteria||[])[i] || {};
+    let s = Number(m.score); if(!isFinite(s)) s=0; s=Math.max(0,Math.min(c.points, Math.round(s*2)/2));
+    return {name:c.name, points:c.points, score:s, reason:String(m.reason||"")};
+  });
+  const conf = ["high","medium","low"].includes(r.confidence)? r.confidence : "medium";
+  return {criteria:crit, total:crit.reduce((a,c)=>a+c.score,0), confidence:conf, flags:Array.isArray(r.flags)?r.flags.map(String).slice(0,4):[], feedback:String(r.feedback||"")};
+}
+
+async function grade(){
+  if(!live) return;
+  if(!S.rubric.length || !total()){ setStatus("Add at least one rubric criterion with points.", false); return; }
+  const all = parseAnswers(); if(!all.length){ setStatus("Add at least one student answer.", false); return; }
+  if(S.isExample){ S.isExample=false; $("#exampleNote").hidden=true; S.results={}; S.review={}; }
+  S.answers = all;
+  Object.keys(S.results).forEach(id=>{ if(!all.find(a=>a.id===id)){ delete S.results[id]; delete S.review[id]; }});
+  const todo = $("#onlyNew").checked ? all.filter(a=>!S.results[a.id]) : all;
+  if(!todo.length){ setStatus("Every answer already has a suggestion.", false); return; }
+  const anchors = parseAnchors(); S.pairs=null;
+  ctl = new AbortController(); $("#gradeBtn").disabled = true;
+  let done = 0;
+  try{
+    for(let i=0;i<todo.length;i+=5){
+      const batch = todo.slice(i,i+5);
+      setStatus(`Grading answers ${i+1}–${i+batch.length} of ${todo.length}…`, true);
+      const out = await callClaude(gradePrompt(batch, anchors), ctl.signal);
+      const arr = Array.isArray(out)? out : (out && Array.isArray(out.answers)? out.answers : []);
+      batch.forEach(a=>{
+        const r = arr.find(x=>String(x.id)===a.id); if(!r) return;
+        const res = clampResult(r); S.results[a.id]=res;
+        S.review[a.id] = {status:"pending", finalScore:null, feedback:res.feedback}; done++;
+      });
+      updateCount();
+    }
+    setStatus(`Graded ${done} answer${done==1?"":"s"}. Open Review to check them.`, false, true);
+  }catch(e){
+    setStatus(e?.code==="cancelled" ? `Stopped. ${done} answer${done==1?"":"s"} graded.` : errText(e)+(done?` ${done} graded before the error.`:""), false, done>0);
+  }finally{ $("#gradeBtn").disabled=false; ctl=null; }
+}
+function setStatus(msg, busy, link){
+  $("#status").hidden=false; $("#statusText").innerHTML = esc(msg) + (link?' <button class="btn small" id="goReview">Open Review</button>':"");
+  $("#stopBtn").hidden=!busy; const g=$("#goReview"); if(g) g.onclick=()=>show("review");
+}
+$("#gradeBtn").onclick=grade;
+$("#stopBtn").onclick=()=>ctl?.abort();
+
+/* ---------- review ---------- */
+const FILTERS=[["all","All"],["attention","Needs attention"],["pending","Pending"],["done","Reviewed"]];
+function ids(){ return Object.keys(S.results); }
+function needsAttention(id){ const r=S.results[id]; return r.confidence==="low"||r.flags.length>0; }
+function updateCount(){ $("#count-review").textContent = ids().filter(id=>S.review[id].status==="pending").length; }
+
+function renderReview(){
+  $("#filters").innerHTML = FILTERS.map(([k,l])=>`<button class="chipbtn" data-f="${k}" aria-pressed="${S.filter===k}">${l}</button>`).join("");
+  const rank = id => (S.review[id].status!=="pending"?10:0) + ({low:0,medium:2,high:4}[S.results[id].confidence]) + (S.results[id].flags.length?0:1);
+  let list = ids().sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
+  if(S.filter==="attention") list=list.filter(needsAttention);
+  if(S.filter==="pending") list=list.filter(id=>S.review[id].status==="pending");
+  if(S.filter==="done") list=list.filter(id=>S.review[id].status!=="pending");
+  const text = id => (S.answers.find(a=>a.id===id)||{}).text || (EX_ANSWERS.find(a=>a[0]===id)||[])[1] || "";
+  const T = total();
+  $("#cards").innerHTML = list.length? list.map(id=>{
+    const r=S.results[id], v=S.review[id];
+    const st = v.status==="accepted"?'<span class="pill done">Accepted</span>': v.status==="overridden"?'<span class="pill over">Overridden</span>':'<span class="pill pend">Pending</span>';
+    const shown = v.finalScore ?? r.total;
+    return `<article class="card ${needsAttention(id)&&v.status==="pending"?"flagged":""}" data-id="${esc(id)}">
+      <div class="main">
+        <div class="chead"><span class="sid">${esc(id)}</span>${st}<span class="pill ${r.confidence}">${r.confidence} confidence</span>${r.flags.map(f=>`<span class="pill flag">${esc(f)}</span>`).join("")}</div>
+        <blockquote class="ans">${esc(text(id))}</blockquote>
+        <table class="crits">${r.criteria.map(c=>`<tr><td class="n">${esc(c.name)}</td><td class="r">${esc(c.reason)}</td><td class="s">${c.score}/${c.points}</td></tr>`).join("")}</table>
+        <div class="fb"><label class="f" for="fb-${esc(id)}">Feedback to student</label><textarea id="fb-${esc(id)}" data-fb="${esc(id)}">${esc(v.feedback)}</textarea></div>
+      </div>
+      <div class="side">
+        <div class="score ${v.status==="overridden"?"marked":""}">${shown}<span class="of"> / ${T}</span></div>
+        <div class="suggest">${v.status==="overridden"?`Claude suggested ${r.total}`: v.status==="accepted"?"Claude's suggestion accepted":"Claude's suggestion"}</div>
+        <button class="btn primary small" data-accept="${esc(id)}">${v.status==="accepted"?"Accepted":"Accept "+r.total}</button>
+        <div class="override"><input type="number" id="ov-${esc(id)}" aria-label="Your score" min="0" max="${T}" step="0.5" placeholder="Score" value="${v.status==="overridden"?v.finalScore:""}"><button class="btn small" data-ov="${esc(id)}">Override</button></div>
+        ${v.status!=="pending"?`<button class="btn small" data-undo="${esc(id)}">Undo</button>`:""}
+      </div></article>`;}).join("")
+    : `<div class="empty">${ids().length? "No answers match this filter.":"No suggested grades yet. Add answers in Setup and grade them."}</div>`;
+  updateCount();
+}
+$("#filters").addEventListener("click",e=>{const f=e.target.dataset.f; if(f){S.filter=f; renderReview();}});
+$("#cards").addEventListener("input",e=>{const id=e.target.dataset.fb; if(id) S.review[id].feedback=e.target.value;});
+$("#cards").addEventListener("click",e=>{
+  const d=e.target.dataset;
+  if(d.accept){ S.review[d.accept].status="accepted"; S.review[d.accept].finalScore=S.results[d.accept].total; }
+  else if(d.ov){ const n=Number($("#ov-"+CSS.escape(d.ov)).value), T=total(); const inp=$("#ov-"+CSS.escape(d.ov));
+    if(inp.value===""||!isFinite(n)||n<0||n>T){ inp.focus(); inp.setCustomValidity(`Enter a score from 0 to ${T}`); inp.reportValidity(); return; }
+    inp.setCustomValidity(""); const same = n===S.results[d.ov].total;
+    S.review[d.ov].status= same?"accepted":"overridden"; S.review[d.ov].finalScore=n; }
+  else if(d.undo){ S.review[d.undo].status="pending"; S.review[d.undo].finalScore=null; }
+  else return;
+  S.pairs=null; renderReview();
+});
+$("#acceptHigh").onclick=()=>{ ids().forEach(id=>{ if(S.review[id].status==="pending"&&S.results[id].confidence==="high"&&!S.results[id].flags.length){S.review[id].status="accepted";S.review[id].finalScore=S.results[id].total;}}); renderReview(); };
+
+/* ---------- export ---------- */
+function csv(){
+  const q=v=>{v=String(v??""); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const head=["id","final_score","max_score","status","claude_suggestion","confidence","flags",...S.rubric.map(c=>"claude_"+c.name.replace(/\W+/g,"_").toLowerCase()),"feedback"];
+  const rows=ids().sort().map(id=>{const r=S.results[id],v=S.review[id];
+    return [id, v.finalScore??"", total(), v.status, r.total, r.confidence, r.flags.join("; "), ...r.criteria.map(c=>c.score), v.feedback];});
+  return [head,...rows].map(r=>r.map(q).join(",")).join("\n");
+}
+$("#exportBtn").onclick=async()=>{
+  const pend = ids().filter(id=>S.review[id].status==="pending").length;
+  const data=csv(); const note=$("#exportNote");
+  const url = URL.createObjectURL(new Blob([data],{type:"text/csv"}));
+  const a = document.createElement("a"); a.href=url; a.download="graded-answers.csv"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  note.textContent = pend? `Exported. ${pend} answer${pend==1?" is":"s are"} still pending and have no final score.`:"Exported.";
+};
+
+/* ---------- insights ---------- */
+function renderInsights(){
+  const all=ids(), rev=all.filter(id=>S.review[id].status!=="pending"), T=total();
+  const agree=rev.filter(id=>S.review[id].status==="accepted").length;
+  const ov=rev.filter(id=>S.review[id].status==="overridden");
+  const mad = ov.length? ov.reduce((a,id)=>a+Math.abs(S.review[id].finalScore-S.results[id].total),0)/ov.length : 0;
+  const within1 = rev.filter(id=>Math.abs(S.review[id].finalScore-S.results[id].total)<=1).length;
+  const pct=(a,b)=>b?Math.round(100*a/b)+"%":"–";
+  $("#kpis").innerHTML=[
+    [`${rev.length}/${all.length}`,"answers reviewed"],
+    [pct(agree,rev.length),"exact agreement with Claude"],
+    [pct(within1,rev.length),"within 1 point"],
+    [ov.length? mad.toFixed(1):"–","avg. change when overridden"]
+  ].map(([b,s])=>`<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join("");
+  const buckets=[]; for(let s=0;s<=Math.ceil(T);s++) buckets.push(s);
+  const cnt=(arr,s)=>arr.filter(x=>Math.floor(x)===s||(s===Math.ceil(T)&&x>=s)).length;
+  const aiS=all.map(id=>S.results[id].total), fin=rev.map(id=>S.review[id].finalScore);
+  const max=Math.max(1,...buckets.map(s=>Math.max(cnt(aiS,s),cnt(fin,s))));
+  $("#hist").innerHTML=buckets.map(s=>{const a=cnt(aiS,s),f=cnt(fin,s);
+    return `<div class="hcol"><div class="hbars"><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><span class="hval">${a||""}</span><div class="hbar ai" style="height:${a/max*100}%;width:18px" title="${a} suggested at ${s}"></div></div><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><span class="hval">${f||""}</span><div class="hbar fin" style="height:${f/max*100}%;width:18px" title="${f} final at ${s}"></div></div></div></div>`;}).join("");
+  $("#hlab").innerHTML=buckets.map(s=>`<span>${s}</span>`).join("");
+  $("#cbars").innerHTML = all.length? S.rubric.map((c,i)=>{const avg=all.reduce((a,id)=>a+(S.results[id].criteria[i]?.score||0),0)/all.length;
+    return `<div class="cb"><span>${esc(c.name)}</span><div class="track"><div style="width:${c.points?avg/c.points*100:0}%"></div></div><span class="mono">${avg.toFixed(1)}/${c.points}</span></div>`;}).join("") : '<p class="hint">No graded answers yet.</p>';
+  renderPairs();
+}
+function renderPairs(){
+  const el=$("#pairs");
+  if(S.pairs===null){ el.innerHTML=""; return; }
+  el.innerHTML = S.pairs.length? S.pairs.map(p=>`<div class="pair"><b class="mono">${esc(p.a)}</b> (${esc(p.sa)}) and <b class="mono">${esc(p.b)}</b> (${esc(p.sb)}): ${esc(p.reason)}</div>`).join("")
+    : '<div class="empty">No inconsistent pairs found in this batch.</div>';
+}
+$("#consBtn").onclick=async()=>{
+  if(!live) return; const list=ids(); if(list.length<2){$("#consNote").textContent="Grade at least two answers first.";return;}
+  const text=id=>(S.answers.find(a=>a.id===id)||{}).text||(EX_ANSWERS.find(a=>a[0]===id)||[])[1]||"";
+  const score=id=>S.review[id].finalScore??S.results[id].total;
+  const prompt=`You are auditing a TA's grading for consistency. Find pairs of answers that make substantially the same points (same bias source, similar mechanism and mitigation quality) but received scores that differ by 1 point or more. Only report real inconsistencies.
+
+QUESTION: ${$("#question").value.trim()}
+RUBRIC (total ${total()}):
+${rubricText()}
+
+GRADED ANSWERS:
+${list.map(id=>`<answer id="${id}" score="${score(id)}">\n${text(id)}\n</answer>`).join("\n")}
+
+Reply with only a JSON array (possibly empty): [{"a":"<id>","b":"<id>","reason":"<one sentence on what they share and why the scores should be closer>"}]`;
+  $("#consBtn").disabled=true; $("#consNote").textContent="Comparing answers…";
+  try{ const out=await callClaude(prompt);
+    S.pairs=(Array.isArray(out)?out:[]).filter(p=>S.results[p.a]&&S.results[p.b]).slice(0,10).map(p=>({a:p.a,b:p.b,sa:score(p.a),sb:score(p.b),reason:String(p.reason||"")}));
+    $("#consNote").textContent=""; renderPairs();
+  }catch(e){ $("#consNote").textContent = e?.code==="cancelled"?"":errText(e); }
+  finally{ $("#consBtn").disabled=false; }
+};
+
+/* ---------- boot ---------- */
+loadExample(); renderRubric(); updateCount();
+$("#answers").addEventListener("input",()=>{ if(S.isExample){ $("#exampleNote").textContent="You've edited the example. Grading will replace the example results with live ones."; }});
+(async()=>{
+  try{
+    const h = await (await fetch("/api/health")).json();
+    live = !!h.configured;
+    $("#codeRow").hidden = !h.needsCode;
+    try{ $("#accessCode").value = localStorage.getItem("ra-code")||""; }catch{}
+  }catch{ live=false; }
+  if(!live) noLive();
+})();
+$("#accessCode").addEventListener("change",e=>{ try{ localStorage.setItem("ra-code", e.target.value.trim()); }catch{} });
+function noLive(){
+  $("#gradeBtn").disabled=true; $("#consBtn").disabled=true;
+  $("#liveNote").textContent="Live grading is off until an API key is added to this site. The example results still work for trying the review flow.";
+}
+</script>
+</body>
+</html>
